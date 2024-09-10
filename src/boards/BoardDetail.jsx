@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import React, { useState, useEffect, useContext } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import PromaApi from "../api/api";
 import LoadingSpinner from "../loadingSpinner/LoadingSpinner";
 import UserContext from "../auth/UserContext";
@@ -22,6 +22,8 @@ function BoardDetail() {
     const [boardUsers, setBoardUsers] = useState(null);
     const [projects, setProjects] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const { currentUser } = useContext(UserContext);
+    const navigate = useNavigate();
 
     /** Controls modal toggle and URL change */
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -39,6 +41,14 @@ function BoardDetail() {
             ]);
             setBoard(boardRes.board);
             setBoardUsers(usersRes.boardUsers);
+
+            // Check if the current user is a member of the board
+            const isUserMember = usersRes.boardUsers.some(user => user.id === currentUser.id);
+            if (!isUserMember) {
+                navigate("/");
+                return;
+            }
+
             if (projectsRes.boardProjects.length) {
                 const projectUsersPromises = projectsRes.boardProjects.map(async project => {
                     const response = await PromaApi.getProjectUsers(project.id);
@@ -68,26 +78,29 @@ function BoardDetail() {
     return (
         <div className="BoardCardList col-md-8 offset-md-2" style={{ textAlign: 'center' }}>
             <h1>{board.title}</h1>
-            <div className="mb-3" 
-                style={{ 
-                    display: 'flex',
-                    justifyContent: 'center',
-                    gap: '1rem', 
-                    marginBottom: '1rem'}}>
-                <Button color="primary" onClick={toggleUserModal}>
-                    Add Users
-                </Button>
-                <NewBoardUserFormModal isOpen={isUserModalOpen} boardId={boardId} toggle={toggleUserModal} boardUsers={boardUsers}/>
-                <Button color="primary" onClick={toggleProjectModal}>
-                    Add Projects
-                </Button>
-                <NewProjectFormModal
-                 isOpen={isProjectModalOpen} 
-                 boardId={boardId} 
-                 boardUsers={boardUsers} 
-                 toggle={toggleProjectModal}
-                 onProjectCreated={handleNewProject}/>
-            </div>
+            {currentUser.isPm && (
+                <div className="mb-3" 
+                    style={{ 
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: '1rem', 
+                        marginBottom: '1rem' }}>
+                    <Button color="primary" onClick={toggleUserModal}>
+                        Add Users
+                    </Button>
+                    <NewBoardUserFormModal isOpen={isUserModalOpen} boardId={boardId} toggle={toggleUserModal} boardUsers={boardUsers}/>
+                    
+                    <Button color="primary" onClick={toggleProjectModal}>
+                        Add Projects
+                    </Button>
+                    <NewProjectFormModal
+                        isOpen={isProjectModalOpen} 
+                        boardId={boardId} 
+                        boardUsers={boardUsers} 
+                        toggle={toggleProjectModal}
+                        onProjectCreated={handleNewProject}/>
+                </div>
+            )}
             <div>
                 <h3>Projects</h3>
                 <ProjectCardList projects={projects}/>

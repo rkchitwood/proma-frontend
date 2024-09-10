@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import PromaApi from "../api/api";
 import { Link } from "react-router-dom";
 import { Card, CardBody, CardTitle, Button } from "reactstrap";
 import LoadingSpinner from "../loadingSpinner/LoadingSpinner";
 import NewBoardFormModal from "./NewBoardFormModal";
+import UserContext from "../auth/UserContext";
 
 
 /** Show list of board cards
@@ -14,6 +15,8 @@ function BoardCardList() {
     const [boards, setBoards] = useState(null);
     const [loading, setLoading] = useState(true);
     const [modal, setModal] = useState(false);
+    const { currentUser } = useContext(UserContext);
+    
     useEffect(function getBoardsOnMount() {
         getBoards();
     }, []);
@@ -30,13 +33,16 @@ function BoardCardList() {
         setLoading(false);
     }
 
+
     return (
         <div className="BoardCardList col-md-8 offset-md-2">
             <div className="mb-3">
-                <Button color="primary" onClick={toggleModal}>
-                    Create New Board
-                </Button>
-                <NewBoardFormModal isOpen={modal} toggle={toggleModal}/>
+                {currentUser?.isPm && (
+                    <Button color="primary" onClick={toggleModal}>
+                        Create New Board
+                    </Button>
+                )}
+                <NewBoardFormModal isOpen={modal} toggle={toggleModal} />
             </div>
             <div>
                 <h2>Your Boards</h2>
